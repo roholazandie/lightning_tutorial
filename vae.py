@@ -6,6 +6,7 @@ import argparse
 from PIL import Image
 import pytorch_lightning as pl
 
+
 def save_image(data, filename):
     img = data.clone().clamp(0, 255).numpy()
     img = img[0].transpose(1, 2, 0)
@@ -30,9 +31,9 @@ class VAE(pl.LightningModule):
         return self.fc21(h1), self.fc22(h1)
 
     def reparameterize(self, mu, logvar):
-        std = torch.exp(0.5*logvar)
+        std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
-        return mu + eps*std
+        return mu + eps * std
 
     def decode(self, z):
         h3 = F.relu(self.fc3(z))
@@ -49,10 +50,8 @@ class VAE(pl.LightningModule):
 
         return BCE + KLD
 
-
     def forward(self, z):
         return self.decode(z)
-
 
     def training_step(self, batch, batch_index):
         x, _ = batch
@@ -76,7 +75,6 @@ class VAE(pl.LightningModule):
 
         return {"val_loss": val_loss, "x_hat": x_hat}
 
-
     def validation_epoch_end(self, outputs):
         avg_val_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
         x_hat = outputs[-1]['x_hat']
@@ -86,7 +84,6 @@ class VAE(pl.LightningModule):
 
         log = {"avg_val_loss": avg_val_loss}
         return {"log": log, "val_loss": avg_val_loss}
-
 
     def configure_optimizers(self):
         return optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
