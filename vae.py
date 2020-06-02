@@ -2,8 +2,10 @@ import torch
 from torch import nn, optim
 from torch.nn import functional as F
 from torchvision import datasets, transforms, utils
+from pytorch_lightning.loggers import WandbLogger
 import argparse
 from PIL import Image
+import wandb
 import pytorch_lightning as pl
 
 
@@ -80,9 +82,10 @@ class VAE(pl.LightningModule):
         x_hat = outputs[-1]['x_hat']
 
         grid = utils.make_grid(x_hat)
-        self.logger.experiment.add_image('images', grid, 0)
+        #self.logger.experiment.add_image('images', grid, 0)
+        #self.logger.log({"examples": [wandb.Image(grid, caption="Label")]})
 
-        log = {"avg_val_loss": avg_val_loss}
+        log = {"avg_val_loss": avg_val_loss, "examples": [wandb.Image(grid, caption="Label")]}
         return {"log": log, "val_loss": avg_val_loss}
 
     def configure_optimizers(self):
@@ -117,5 +120,9 @@ if __name__ == "__main__":
     # trainer = pl.Trainer(train_percent_check=0.1, val_percent_check=0.1) # fast_dev_run=True runs 1 batch of train, test  and val to find any bugs (ie: a sort of unit test)
     #                         # train_percent_check=0.1 check 10% of the training data
 
-    trainer = pl.Trainer.from_argparse_args(args, train_percent_check=0.1, val_percent_check=0.1)
+    wandb_logger = WandbLogger(name="adam2", project="pytorchlightning")
+
+    wandb_logger.watch(vae, log='gradients', log_freq=100)
+
+    trainer = pl.Trainer.from_argparse_args(args, logger=wandb_logger, train_percent_check=0.1, val_percent_check=0.1)
     trainer.fit(vae)

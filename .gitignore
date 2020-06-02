@@ -18,3 +18,5 @@ out
 emp_transfo_checkpoint/*
 lightning_logs
 results
+pytorchlightning
+wandb
